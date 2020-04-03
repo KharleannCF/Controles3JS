@@ -8,7 +8,7 @@ Usar el siguiente link para instalar el webpack
  
  Para realizar cambios buscar el archivo  `index.js` 
  
- #Dependencies
+ # Dependencies
  
   - Webpack
   - ThreeJS
