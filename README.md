@@ -12,5 +12,5 @@ Usar el siguiente link para instalar el webpack
  
   - Webpack
   - ThreeJS
- 
+  - PointerLockControls (part of threeJS library)
  
