@@ -44,13 +44,14 @@ const renderer = new THREE.WebGLRenderer({canvas});
 renderer.shadowMap.enabled = true;
 
 
+//camera
 
 
-
-camera.position.set(0,2,-30);
-camera.lookAt(0,0,0);
+camera.position.set(0,20,-30);
 camera.updateProjectionMatrix();
 
+
+//meshes
 //Rotation space, cubes will be here
 const spaceRotation = new THREE.Object3D();
 
@@ -83,10 +84,10 @@ for (let i = 0; i < 700; i++) {
 	let starGeo = new THREE.SphereGeometry(1.5,1,1);
 	let star = new THREE.Mesh(starGeo,starMat);
 	while (star.position.manhattanDistanceTo(new THREE.Vector3(0,0,0)) < 1000 ||
-		star.position.distanceTo(new THREE.Vector3(0,0,0)) > 1999){
-		star.position.x = (Math.random()*(1999 - 1000) + 1000) * (Math.random() * 2 - 1);
-		star.position.y = Math.random()*1999;
-		star.position.z = (Math.random()*(1999 - 1000) + 1000) * (Math.random() * 2 - 1);
+		star.position.distanceTo(new THREE.Vector3(0,0,0)) > 1900){
+		star.position.x = (Math.random()*(1900 - 1000) + 1000) * (Math.random() * 2 - 1);
+		star.position.y = Math.random()*1900;
+		star.position.z = (Math.random()*(1900 - 1000) + 1000) * (Math.random() * 2 - 1);
 	}
 	if (Math.random()<0.1){
 	stars.push(star);	
@@ -115,12 +116,12 @@ soundSphere.add(sound);
 scene.add(spaceRotation);
 
 //Ground
-let geoFloor = new THREE.BoxGeometry( 500, 0.1, 500 );
+let geoFloor = new THREE.BoxGeometry( 500, 0.5, 500 );
 let matStdFloor = new THREE.MeshLambertMaterial( { color: 0x808080 } );
 let mshStdFloor = new THREE.Mesh( geoFloor, matStdFloor );
 mshStdFloor.receiveShadow = true;
 
-mshStdFloor.position.set(0,0,0);
+mshStdFloor.position.set(0,-0.25,0);
 interactiveElements.push(mshStdFloor);
 scene.add( mshStdFloor );
 
@@ -129,7 +130,7 @@ geoFloor = new THREE.BoxGeometry( 4, 4, 4 );
 matStdFloor = new THREE.MeshBasicMaterial( { color: 0x808010 } );
 mshStdFloor = new THREE.Mesh( geoFloor, matStdFloor );
 mshStdFloor.receiveShadow = true;
-mshStdFloor.position.set(5,2,4)
+mshStdFloor.position.set(5,2,4);
 
 interactiveElements.push(mshStdFloor);
 scene.add( mshStdFloor );
@@ -139,20 +140,34 @@ geoFloor = new THREE.BoxGeometry( 8, 8, 8 );
 matStdFloor = new THREE.MeshBasicMaterial( { color: 0x8F501F } );
 mshStdFloor = new THREE.Mesh( geoFloor, matStdFloor );
 mshStdFloor.receiveShadow = true;
-mshStdFloor.position.set(5,4,10)
+mshStdFloor.position.set(5,4,10);
 
 interactiveElements.push(mshStdFloor);
 scene.add( mshStdFloor );
 
 //big cube that you can step on
-geoFloor = new THREE.BoxGeometry( 12, 16, 8 );
+geoFloor = new THREE.BoxGeometry( 12, 12, 8 );
 matStdFloor = new THREE.MeshBasicMaterial( { color: 0x605F0F } );
 mshStdFloor = new THREE.Mesh( geoFloor, matStdFloor );
 mshStdFloor.receiveShadow = true;
-mshStdFloor.position.set(5,4,14)
+mshStdFloor.position.set(5,6,18);
 
 interactiveElements.push(mshStdFloor);
 scene.add( mshStdFloor );
+
+
+geoFloor = new THREE.BoxGeometry( 12, 12, 8 );
+matStdFloor = new THREE.MeshBasicMaterial( { color: 0x605F0F } );
+mshStdFloor = new THREE.Mesh( geoFloor, matStdFloor );
+mshStdFloor.receiveShadow = true;
+mshStdFloor.position.set(50,12,20);
+
+interactiveElements.push(mshStdFloor);
+scene.add( mshStdFloor );
+
+
+
+//Lights
 
 
 //general light
@@ -162,14 +177,7 @@ directLight.lookAt(0,10,0);
 directLight.castShadow = true;
 scene.add(directLight);
 
-/*
-const lightPoint = new THREE.PointLight(0xFFFFFF,2,0,2);
-lightPoint.position.set(0,30,0);
-lightPoint.lookAt(0,0,0);
-lightPoint.castShadow = true;
-scene.add(lightPoint);
-*/
-
+//light for soundSphere
 const lightPoint2 = new THREE.SpotLight(0xFFFFFF, 1);
 lightPoint2.position.set(0,25,-10);
 lightPoint2.target = soundSphere2;
@@ -179,15 +187,16 @@ scene.add(lightPoint2);
 
 //Camera controls
 /*
-Primer intento, con controles orbitales por mouse
+//Primer intento, con controles orbitales por mouse
 const controls = new OrbitControls( camera, renderer.domElement );
 controls.maxPolarAngle = Math.PI * 0.7;
 controls.minDistance = 0.1;
 controls.maxDistance = 1000;
 controls.enableDamping = true;
 */
-
 //movements
+
+
 let moveForward = false;
 let moveBackward = false;
 let moveLeft = false;
@@ -201,6 +210,9 @@ let velocity = new THREE.Vector3();
 const controls = new PointerLockControls( camera, document.body );
 
 scene.add(controls.getObject());
+
+
+
 let onKeyDown = function ( event ) {
 	switch ( event.keyCode ) {
 		case 38: // up
@@ -307,7 +319,8 @@ function render(time) {
     if (controls.isLocked){
 
   	raycaster.ray.origin.copy(controls.getObject().position);
-  	raycaster.ray.origin.y +=7.5;
+  	raycaster.ray.origin.y -=2;
+
 
 
   	let intersection = raycaster.intersectObjects(interactiveElements);
@@ -336,6 +349,12 @@ function render(time) {
   	}
   	if(!canFly){
 	  	if (onObject){
+	  		console.log("Raycaster");
+	  		console.log(raycaster.ray.origin.y);
+	  		console.log("Camera");
+	  		console.log(controls.getObject().position.y);
+	  		console.log('Times');
+	  		console.log(times);
 	  		velocity.y = Math.max( 0, velocity.y);
 	  		if (velocity.y <=0) {
 	  			canJump = true;
@@ -346,21 +365,19 @@ function render(time) {
   	}else {
   		if(moveDown && onObject){
   			velocity.y = 0;
-  			console.log("hola")
   		}
   	}
   		controls.moveRight(-velocity.x);
 	  	controls.moveForward(-velocity.z);
 	  	controls.getObject().position.y += (velocity.y);
-
-/* Este condicional es para evitar una caida al vacio
+/*
+ Este condicional es para evitar una caida al vacio
   	if (controls.getObject().position.y < 2){
   		velocity.y = 0;
-  		console.log(controls.getObject().position.y);
   		controls.getObject().position.y = 2;
   		canJump = true;
   	}
-  */
+*/  
 	}
 
   spaceRotation.rotation.y = time;
