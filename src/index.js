@@ -5,6 +5,9 @@
  dont change package.json
  Camera-controls Documentation https://github.com/yomotsu/camera-controls
 
+
+
+
  */
 
 
@@ -16,8 +19,9 @@ CameraControls.install({THREE : THREE});
 const canvas = document.getElementById('canvas');
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.01, 1500 );
+const camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.01, 1500 );
 camera.position.set(0, 0, 0,);
+
 
 //Audio
 const listener = new THREE.AudioListener();
@@ -170,12 +174,11 @@ scene.add(lightPoint2);
 
 const clock = new THREE.Clock();
 const cameraControls = new CameraControls( camera, renderer.domElement );
-cameraControls.setLookAt( 10, 2, 1, 10.1, 1.9, 1.1, false );
+cameraControls.setLookAt( 10, 2, 1, 10.1, 2.1, 1.1, false );
 cameraControls.maxDistance = 0.1;
 cameraControls.minDistance = 0;
 cameraControls.truckSpeed = 2.0;
 cameraControls.colliderMeshes = interactiveElements.slice(0,interactiveElements.length - 1);
-
 
 
 //movements
@@ -243,8 +246,24 @@ let onKeyUp = function ( event ) {
 			break;
 		}
 };
+
 document.addEventListener( 'keydown', onKeyDown, false );
 document.addEventListener( 'keyup', onKeyUp, false );
+
+
+document.addEventListener( 'click', function () {
+	//sound starter
+	if (!sound.isPlaying){
+		audioLoader.load( audioSong, function (buffer){
+			sound.setBuffer(buffer);
+			sound.setLoop(true);
+			sound.setRefDistance(10);
+			sound.autoplay = true;
+			sound.play();
+		});
+	}
+
+}, false );
 
 
 //responsive function
@@ -275,7 +294,7 @@ function render(time) {
 
 	//ground collider
 	raycaster.ray.origin.copy(cameraControls.getTarget());
-	raycaster.ray.origin.y -=1.1; //Target Y coordinate
+	raycaster.ray.origin.y -=0.9; //Target Y coordinate
   	let intersection = raycaster.intersectObjects(interactiveElements);
 	let onObject = intersection.length > 0;
 
@@ -303,12 +322,10 @@ function render(time) {
 	  	cameraControls.truck(0,-5*jumpSpeed*delta,true);
 	}else {
 		if (moveUp || moveDown) {
-			
 			cameraControls.truck(0,-10*delta*direction.y,true);
   		}
 
 	}
-
   		
 
   	if ( cameraControls.update(delta)){
