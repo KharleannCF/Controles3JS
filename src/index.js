@@ -303,7 +303,7 @@ function render(time) {
 	  	cameraControls.truck(0,-5*jumpSpeed*delta,true);
 	}else {
 		if (moveUp || moveDown) {
-			console.log(cameraControls.camera.position);
+			
 			cameraControls.truck(0,-10*delta*direction.y,true);
   		}
 
