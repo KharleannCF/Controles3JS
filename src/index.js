@@ -1,22 +1,23 @@
-//Dependencies Webpack  and threeJS, npm install webpack webpack-cli, npm install threeJS
-// npm run-script build to compile, work on this file.
-// dont change package.json
+/*
+ Dependencies Webpack  and threeJS, npm install webpack webpack-cli,
+ npm install threeJS, npm install camera-controls
+ npm run-script build to compile, work on this file.
+ dont change package.json
+ Camera-controls Documentation https://github.com/yomotsu/camera-controls
+
+ */
 
 
 const THREE = require('three');
+import CameraControls from 'camera-controls';
 
-
-//Orbit controls
-// import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-
-//Keyboard controls
-import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
-
+CameraControls.install({THREE : THREE});
 
 const canvas = document.getElementById('canvas');
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.01, 2000 );
+const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.01, 1500 );
+camera.position.set(0, 0, 0,);
 
 //Audio
 const listener = new THREE.AudioListener();
@@ -25,31 +26,28 @@ const audioSong = 'cancion.mp3';
 const sound = new THREE.PositionalAudio(listener);
 const audioLoader = new THREE.AudioLoader();
 
-
-
-
 //utils
 const Pi = Math.PI/180;
 const stars = [];
+//movement utils
+const direction = new THREE.Vector3(0,0,0);
+let jumpSpeed = 0;
+let moveForward = false;
+let moveBackward = false;
+let moveLeft = false;
+let moveRight = false;
+let moveUp = false;
+let moveDown = false;
+let canJump = false;
+let canFly = false;
+const raycaster = new THREE.Raycaster(new THREE.Vector3(0,0,0), new THREE.Vector3(0,-1,0),0,2);
 
 //elements that interfere with movement
 const interactiveElements = [];
 
 
-//mouse catcher
-const raycaster = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(0,-1,0),0,10);
-
-
 const renderer = new THREE.WebGLRenderer({canvas});
 renderer.shadowMap.enabled = true;
-
-
-//camera
-
-
-camera.position.set(0,20,-30);
-camera.updateProjectionMatrix();
-
 
 //meshes
 //Rotation space, cubes will be here
@@ -84,10 +82,10 @@ for (let i = 0; i < 700; i++) {
 	let starGeo = new THREE.SphereGeometry(1.5,1,1);
 	let star = new THREE.Mesh(starGeo,starMat);
 	while (star.position.manhattanDistanceTo(new THREE.Vector3(0,0,0)) < 1000 ||
-		star.position.distanceTo(new THREE.Vector3(0,0,0)) > 1900){
-		star.position.x = (Math.random()*(1900 - 1000) + 1000) * (Math.random() * 2 - 1);
-		star.position.y = Math.random()*1900;
-		star.position.z = (Math.random()*(1900 - 1000) + 1000) * (Math.random() * 2 - 1);
+		star.position.distanceTo(new THREE.Vector3(0,0,0)) > 1500){
+		star.position.x = (Math.random()*(1499 - 1000) + 1000) * (Math.random() * 2 - 1);
+		star.position.y = Math.random()*1499;
+		star.position.z = (Math.random()*(1499 - 1000) + 1000) * (Math.random() * 2 - 1);
 	}
 	if (Math.random()<0.1){
 	stars.push(star);	
@@ -96,32 +94,27 @@ for (let i = 0; i < 700; i++) {
 }
 
 //Sound point origin
-const soundSphere = new THREE.Mesh(new THREE.SphereGeometry(2,16,16),
-	new THREE.MeshPhongMaterial({color: 0x0, specular:0xFFFFFF, shininess: 100, opacity:0.3, transparent: true}));
+const soundSphere = new THREE.Mesh( new THREE.SphereGeometry(2,16,16),
+									new THREE.MeshPhongMaterial({color: 0x0, 
+									specular:0xFFFFFF, shininess: 100, opacity:0.3, transparent: true}));
 soundSphere.position.y = 30;
 const soundSphere2 = new THREE.Mesh(new THREE.SphereGeometry(1,16,16),
-	new THREE.MeshPhongMaterial({color: 0x0F0F6F, specular:0x0F0F6F}));
+									new THREE.MeshPhongMaterial({color: 0x0F0F6F, specular:0x0F0F6F}));
 soundSphere2.position.y = 30;
 
-soundSphere.castShadow=false;
-soundSphere2.castShadow=false;
-
-
 scene.add(soundSphere);
-spaceRotation.add(soundSphere2);
+scene.add(soundSphere2);
 soundSphere.add(sound);
-
-
 
 scene.add(spaceRotation);
 
 //Ground
-let geoFloor = new THREE.BoxGeometry( 500, 0.5, 500 );
+let geoFloor = new THREE.BoxGeometry( 500, 1, 500 );
 let matStdFloor = new THREE.MeshLambertMaterial( { color: 0x808080 } );
 let mshStdFloor = new THREE.Mesh( geoFloor, matStdFloor );
 mshStdFloor.receiveShadow = true;
 
-mshStdFloor.position.set(0,-0.25,0);
+mshStdFloor.position.set(0,-0.5,0);
 interactiveElements.push(mshStdFloor);
 scene.add( mshStdFloor );
 
@@ -155,62 +148,37 @@ mshStdFloor.position.set(5,6,18);
 interactiveElements.push(mshStdFloor);
 scene.add( mshStdFloor );
 
-
-geoFloor = new THREE.BoxGeometry( 12, 12, 8 );
-matStdFloor = new THREE.MeshBasicMaterial( { color: 0x605F0F } );
-mshStdFloor = new THREE.Mesh( geoFloor, matStdFloor );
-mshStdFloor.receiveShadow = true;
-mshStdFloor.position.set(50,12,20);
-
-interactiveElements.push(mshStdFloor);
-scene.add( mshStdFloor );
-
-
-
 //Lights
 
 
 //general light
 const directLight = new THREE.DirectionalLight(0xFFFFFF, 0.3);
-directLight.position.set(1,1,0);
-directLight.lookAt(0,10,0);
+directLight.position.set(0,10,0);
+directLight.lookAt(0,1,0);
 directLight.castShadow = true;
 scene.add(directLight);
 
 //light for soundSphere
 const lightPoint2 = new THREE.SpotLight(0xFFFFFF, 1);
-lightPoint2.position.set(0,25,-10);
+lightPoint2.position.set(0,30,-30);
 lightPoint2.target = soundSphere2;
 lightPoint2.castShadow = true;
 scene.add(lightPoint2);
 
 
 //Camera controls
-/*
-//Primer intento, con controles orbitales por mouse
-const controls = new OrbitControls( camera, renderer.domElement );
-controls.maxPolarAngle = Math.PI * 0.7;
-controls.minDistance = 0.1;
-controls.maxDistance = 1000;
-controls.enableDamping = true;
-*/
+
+const clock = new THREE.Clock();
+const cameraControls = new CameraControls( camera, renderer.domElement );
+cameraControls.setLookAt( 10, 2, 1, 10.1, 1.9, 1.1, false );
+cameraControls.maxDistance = 0.1;
+cameraControls.minDistance = 0;
+cameraControls.truckSpeed = 2.0;
+cameraControls.colliderMeshes = interactiveElements.slice(0,interactiveElements.length - 1);
+
+
+
 //movements
-
-
-let moveForward = false;
-let moveBackward = false;
-let moveLeft = false;
-let moveRight = false;
-let moveUp = false;
-let moveDown = false;
-let canJump = false;
-let canFly = false;
-let direction = new THREE.Vector3();
-let velocity = new THREE.Vector3();
-const controls = new PointerLockControls( camera, document.body );
-
-scene.add(controls.getObject());
-
 
 
 let onKeyDown = function ( event ) {
@@ -232,8 +200,8 @@ let onKeyDown = function ( event ) {
 			moveRight = true;
 			break;
 		case 32: // space
-			if ( canJump==true ) {
-				velocity.y += 2;
+			if ( canJump ) {
+				jumpSpeed = 1;
 			}
 			canJump = false;
 			break;
@@ -275,128 +243,86 @@ let onKeyUp = function ( event ) {
 			break;
 		}
 };
-
 document.addEventListener( 'keydown', onKeyDown, false );
 document.addEventListener( 'keyup', onKeyUp, false );
 
 
-
-
-document.addEventListener( 'click', function () {
-	//control getter
-	controls.lock();
-
-	//sound starter
-	if (!sound.isPlaying){
-		audioLoader.load( audioSong, function (buffer){
-			sound.setBuffer(buffer);
-			sound.setLoop(true);
-			sound.setRefDistance(10);
-			sound.autoplay = true;
-			sound.play();
-		});
-	}
-
-}, false );
-
 //responsive function
+
 function resizeRendererToDisplaySize(renderer) {
-      const canvas = renderer.domElement;
-      const pixelRatio = window.devicePixelRatio;
-      const width  = canvas.clientWidth  * pixelRatio | 0;
-      const height = canvas.clientHeight * pixelRatio | 0;
-      const needResize = canvas.width !== width || canvas.height !== height;
-      if (needResize) {
-        renderer.setSize(width, height, false);
-      }
-      return needResize;
-    }
+	const canvas = renderer.domElement;
+	const pixelRatio = window.devicePixelRatio;
+	const width  = canvas.clientWidth  * pixelRatio | 0;
+	const height = canvas.clientHeight * pixelRatio | 0;
+	const needResize = canvas.width !== width || canvas.height !== height;
+	if (needResize) {
+	  renderer.setSize(width, height, false);
+	}
+	return needResize;
+}
 
 function render(time) {
-  time*=0.00025;
+	time*=0.00025;
+	spaceRotation.rotation.y = time;
 
+	stars.forEach(function (star){
+ 		star.material.emissive = new THREE.Color().setHex(0xFFFFFF * Math.random());
+	});
 
-    if (controls.isLocked){
+	const delta = clock.getDelta();
 
-  	raycaster.ray.origin.copy(controls.getObject().position);
-  	raycaster.ray.origin.y -=2;
+	//Render movements
 
-
-
+	//ground collider
+	raycaster.ray.origin.copy(cameraControls.getTarget());
+	raycaster.ray.origin.y -=1.1; //Target Y coordinate
   	let intersection = raycaster.intersectObjects(interactiveElements);
-  	let onObject = intersection.length > 0;
+	let onObject = intersection.length > 0;
 
-  	let times = performance.now();
-  	let delta = times/1000;
 
-  	velocity.x = 0;	
- 	velocity.z = 0;
- 	velocity.y = (canFly) ? 0 : velocity.y - 9.8 * 0.025;
 
-  	direction.z = Number(moveForward) - Number(moveBackward);
+
+ 	direction.z = Number(moveForward) -Number(moveBackward);
   	direction.x = Number(moveRight) - Number(moveLeft);
   	direction.y = Number(moveUp) - Number(moveDown);
+  	jumpSpeed = (canFly) ? 0 : jumpSpeed - ( 10 * 0.05* delta); //Gravity * weight * Delta for performance
   	direction.normalize();
 
   	if (moveForward || moveBackward) {
-  		velocity.z -= direction.z*0.6;
+  		cameraControls.forward(10*delta*direction.z,true);
   	}
   	if (moveLeft || moveRight) {
-	  	velocity.x -= direction.x*0.6; ;
-  	}
-  	if ((moveUp || moveDown) && canFly) {
-	  	velocity.y += direction.y*0.6; ;
+	  	cameraControls.truck(10*delta*direction.x,0,true);
   	}
   	if(!canFly){
 	  	if (onObject){
-	  		console.log("Raycaster");
-	  		console.log(raycaster.ray.origin.y);
-	  		console.log("Camera");
-	  		console.log(controls.getObject().position.y);
-	  		console.log('Times');
-	  		console.log(times);
-	  		velocity.y = Math.max( 0, velocity.y);
-	  		if (velocity.y <=0) {
-	  			canJump = true;
-	  		}
-	  	}else {
-	  		canJump = false;
-	  	} 	
-  	}else {
-  		if(moveDown && onObject){
-  			velocity.y = 0;
+	  		
+	  		jumpSpeed = Math.max(0,jumpSpeed);
+	  		canJump = jumpSpeed <=0;
+	  	}
+	  	cameraControls.truck(0,-5*jumpSpeed*delta,true);
+	}else {
+		if (moveUp || moveDown) {
+			console.log(cameraControls.camera.position);
+			cameraControls.truck(0,-10*delta*direction.y,true);
   		}
-  	}
-  		controls.moveRight(-velocity.x);
-	  	controls.moveForward(-velocity.z);
-	  	controls.getObject().position.y += (velocity.y);
-/*
- Este condicional es para evitar una caida al vacio
-  	if (controls.getObject().position.y < 2){
-  		velocity.y = 0;
-  		controls.getObject().position.y = 2;
-  		canJump = true;
-  	}
-*/  
+
 	}
 
-  spaceRotation.rotation.y = time;
+  		
 
-  stars.forEach(function (star){
-  	//star.rotation.y = time*Math.random()*0.001;
-  	star.material.emissive = new THREE.Color().setHex(0xFFFFFF * Math.random());
-  });
+  	if ( cameraControls.update(delta)){
+  		camera.updateProjectionMatrix();
+  		renderer.render(scene,camera);
+  	}
 
 
-
-  if (resizeRendererToDisplaySize(renderer)) {
-    const canvas = renderer.domElement;
-    camera.aspect = canvas.clientWidth / canvas.clientHeight;
-    camera.updateProjectionMatrix();
-  }
-
-  renderer.render(scene, camera);
- 
-  requestAnimationFrame(render);
+	if (resizeRendererToDisplaySize(renderer)){
+			const canvas = renderer.domElement;
+			camera.aspect = canvas.clientWidth / canvas.clientHeight;
+			camera.updateProjectionMatrix();
+		}
+	renderer.render(scene, camera);
+	requestAnimationFrame(render);
 }
 requestAnimationFrame(render);
